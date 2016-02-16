@@ -79,7 +79,9 @@ defmodule HelloPlug do
           date ->
             case DateFormat.parse(date, "{ISO}") do
               {:ok, _} -> json
-              {_, _} -> {:error, %{:code => 400, :body => ""}}
+              {_, _} ->
+                Logger.error("Invalid date format")
+                {:error, %{:code => 400, :body => ""}}
             end
         end
     end
@@ -103,7 +105,6 @@ defmodule HelloPlug do
   end
 
   defp respond(response, conn) do
-    # Logger.info(response)
     case response do
       {:ok, _} -> send_resp(conn, 200, "")
       {:error, resp} -> send_resp(conn, resp[:code], resp[:body])
