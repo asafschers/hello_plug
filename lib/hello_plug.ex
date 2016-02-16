@@ -26,26 +26,29 @@ defmodule HelloPlug do
     else
       {:ok, conn}
     end
-    conn
   end
 
-  def validate_body(conn) do
-    case read_body(conn) do
-      {:more, _, _} ->
-        {:error, %{:code => 400, :body => ""}}
-      {:error, _} ->
-        {:error, %{:code => 500, :body => ""}}
-      {:ok, body, _} ->
-        validated_body =
-          body
-          |> extract_json
-          |> validate_created_at
-          |> validate_id
-        case validated_body do
-          {:ok, _} ->
-            {:ok, conn}
+  def validate_body(conn_data) do
+    case conn_data do
+      {:error, _} -> conn_data
+      {:ok, conn} ->
+        case read_body(conn) do
+          {:more, _, _} ->
+            {:error, %{:code => 400, :body => ""}}
           {:error, _} ->
-            validated_body
+            {:error, %{:code => 500, :body => ""}}
+          {:ok, body, _} ->
+            validated_body =
+              body
+              |> extract_json
+              |> validate_created_at
+              |> validate_id
+            case validated_body do
+              {:ok, _} ->
+                {:ok, conn}
+              {:error, _} ->
+                validated_body
+            end
         end
     end
   end
