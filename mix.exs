@@ -31,6 +31,6 @@ defmodule HelloPlug.Mixfile do
      {:plug,   "~> 1.0"},
      {:json,   "~> 0.3.0"},
      {:timex, "~> 1.0.1"},
-     {:erlcloud, git: "https://github.com/gleber/erlcloud"}]
+     {:erlcloud, git: "https://github.com/gleber/erlcloud", tag: "0.13.0"}]
   end
 end

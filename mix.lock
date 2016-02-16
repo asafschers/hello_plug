@@ -2,7 +2,7 @@
   "combine": {:hex, :combine, "0.7.0"},
   "cowboy": {:hex, :cowboy, "1.0.4"},
   "cowlib": {:hex, :cowlib, "1.0.2"},
-  "erlcloud": {:git, "https://github.com/gleber/erlcloud", "c18f1be8925ee0e94e373dbcde6a2dfa6a6aa91a", []},
+  "erlcloud": {:git, "https://github.com/gleber/erlcloud", "83fbf9ae0f2172185cfb584da91760022d2e1768", [tag: "0.13.0"]},
   "hackney": {:hex, :hackney, "1.4.8"},
   "idna": {:hex, :idna, "1.0.3"},
   "json": {:hex, :json, "0.3.3"},

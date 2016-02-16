@@ -38,24 +38,36 @@ defmodule HelloPlug do
           {:error, _} ->
             {:error, %{:code => 500, :body => ""}}
           {:ok, body, _} ->
-            validated_body =
-              body
-              |> extract_json
-              |> validate_created_at
-              |> validate_id
-            case validated_body do
-              {:ok, _} ->
-                {:ok, conn}
-              {:error, _} ->
-                validated_body
-            end
+            body
+            |> extract_json
+            |> validate_created_at
+            |> validate_id
         end
     end
   end
 
-  def send_sqs_message(conn) do
-    # :erlcloud_sqs.send_message
-    conn
+  def send_sqs_message(json) do
+    case json do
+      {:error, _} -> json
+      {:ok, data} ->
+        case JSON.encode(data) do
+          {:ok, res} ->
+            res = try do
+              :erlcloud_sqs.send_message(["haim-test"], [res])
+            rescue
+              e in ErlangError ->
+                Logger.error(inspect(e))
+                {:error, %{:code => 500, :body => ""}}
+            end
+            case res do
+              {:error, _} -> res
+              _ -> {:ok, json}
+            end
+          _ ->
+            Logger.error("Error encoding body")
+            {:error, %{:code => 500, :body => ""}}
+        end
+    end
   end
 
   defp extract_json(body) do
@@ -97,10 +109,10 @@ defmodule HelloPlug do
       {:ok, json_data} ->
         case json_data["id"] do
           nil ->
-            Logger.info("Empty id")
+            Logger.error("Missing id")
             {:error, %{:code => 400, :body => ""}}
           "" ->
-            Logger.info("Empty id")
+            Logger.error("Empty id")
             {:error, %{:code => 400, :body => ""}}
           _ -> json
         end
