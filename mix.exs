@@ -14,7 +14,7 @@ defmodule HelloPlug.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:cowboy, :plug, :logger, :timex, :erlcloud],
+    [applications: [:cowboy, :plug, :logger, :timex, :erlcloud, :json],
      mod: {HelloPlug.Supervisor, []}]
   end
 
@@ -32,6 +32,7 @@ defmodule HelloPlug.Mixfile do
      {:plug,   "~> 1.0"},
      {:json,   "~> 0.3.0"},
      {:timex, "~> 1.0.1"},
+     {:exrm, "~> 0.18.1"},
      {:erlcloud, git: "https://github.com/gleber/erlcloud", tag: "0.13.0"}]
   end
 end

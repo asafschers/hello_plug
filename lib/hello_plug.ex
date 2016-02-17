@@ -53,7 +53,7 @@ defmodule HelloPlug do
         case JSON.encode(data) do
           {:ok, res} ->
             res = try do
-              :erlcloud_sqs.send_message(["haim-test"], [res])
+              :erlcloud_sqs.send_message(["botw_scratch"], [res])
             rescue
               e in ErlangError ->
                 Logger.error(inspect(e))
