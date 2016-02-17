@@ -14,7 +14,8 @@ defmodule HelloPlug.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:cowboy, :plug, :logger, :timex, :erlcloud]]
+    [applications: [:cowboy, :plug, :logger, :timex, :erlcloud],
+     mod: {HelloPlug.Supervisor, []}]
   end
 
   # Dependencies can be Hex packages:

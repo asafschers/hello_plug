@@ -1,20 +1,21 @@
-# HelloPlug
+## HelloPlug
 
-**TODO: Add description**
+### Requirements
 
-## Installation
+This project runs on Elixir 1.2.2 (install with `brew install elixir`)
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+### Running
+In the project root run the following:
 
-  1. Add hello_plug to your list of dependencies in `mix.exs`:
+```sh
+# Install Dependencies
+mix deps:get
 
-        def deps do
-          [{:hello_plug, "~> 0.0.1"}]
-        end
+# Start the REPL with the webapp already running
+iex -S mix
+```
 
-  2. Ensure hello_plug is started before your application:
-
-        def application do
-          [applications: [:hello_plug]]
-        end
-
+In order to load changes to a file, save the file and run inside the REPL:
+```
+c "lib/filename.ex"
+```
