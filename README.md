@@ -33,3 +33,11 @@ the target server (no need for erlang there!) open it and run:
 ```sh
 bin/hello_plug start
 ```
+
+It's also required to configure the destination host to redirect port 80 to
+the application port (4000). This is done with the following commands:
+
+```sh
+sudo iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 4000
+sudo iptables -t nat -I OUTPUT -p tcp -o lo --dport 80 -j REDIRECT --to-ports 4000
+```
