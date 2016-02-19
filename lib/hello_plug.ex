@@ -8,124 +8,110 @@ defmodule HelloPlug do
   plug :dispatch
 
   post "/bang" do
-    conn
-    |> validate_header
-    |> validate_body
-    |> send_sqs_message
-    |> respond(conn)
+    validated = with :ok <- validate_headers(conn),
+                     {:ok, body} <- extract_body(conn),
+                     {:ok, json} <- extract_json(body),
+                     :ok <- validate_created_at(json),
+                     :ok <- validate_id(json),
+                     :ok <- send_sqs_message(json)
+                do
+                  :ok
+                end
+    case validated do
+      :ok -> send_resp(conn, 200, "")
+      {:error, response} -> send_resp(conn, response.code, response.body)
+      _ -> send_resp(conn, 500, "")
+    end
   end
 
   match _ do
     send_resp(conn, 404, "")
   end
 
-  def validate_header(conn) do
-    if get_req_header(conn, "x-riskified-shop-domain") == [] do
-      Logger.error("Invalid header")
-      {:error, %{:code => 400, :body => ""}}
-    else
-      {:ok, conn}
+  defp validate_headers(conn) do
+    case get_req_header(conn, "x-riskified-shop-domain") do
+      [] ->
+        Logger.error("Invalid header")
+        error_response(400, "")
+      _ ->
+        :ok
     end
   end
 
-  def validate_body(conn_data) do
-    case conn_data do
-      {:error, _} -> conn_data
-      {:ok, conn} ->
-        case read_body(conn) do
-          {:more, _, _} ->
-            {:error, %{:code => 400, :body => ""}}
-          {:error, _} ->
-            {:error, %{:code => 500, :body => ""}}
-          {:ok, body, _} ->
-            body
-            |> extract_json
-            |> validate_created_at
-            |> validate_id
-        end
-    end
-  end
-
-  def send_sqs_message(json) do
-    case json do
-      {:error, _} -> json
-      {:ok, data} ->
-        case JSON.encode(data) do
-          {:ok, res} ->
-            res = try do
-              :erlcloud_sqs.send_message(["botw_scratch"], [res])
-            rescue
-              e in ErlangError ->
-                Logger.error(inspect(e))
-                {:error, %{:code => 500, :body => ""}}
-            end
-            case res do
-              {:error, _} -> res
-              _ -> {:ok, json}
-            end
-          _ ->
-            Logger.error("Error encoding body")
-            {:error, %{:code => 500, :body => ""}}
-        end
+  defp extract_body(conn) do
+    case read_body(conn) do
+      {:more, _, _} ->
+        Logger.error("Body too large!")
+        error_response(400, "")
+      {:error, _} ->
+        Logger.error("Error reading body!")
+        error_response(500, "")
+      {:ok, body, _} ->
+        {:ok, body}
     end
   end
 
   defp extract_json(body) do
     case JSON.decode(body) do
       {:ok, parsed} -> {:ok, parsed}
-      {_, _} ->
+      _ ->
         Logger.error("Error extracting json")
-        {:error, %{:code => 500, :body => ""}}
+        error_response(400, "")
     end
   end
 
   defp validate_created_at(json) do
-    case json do
-      {:error, _} ->
-        json
-      {:ok, json_data} ->
-        case json_data["created_at"] do
-          nil ->
-            Logger.error("Empty created_at")
-            {:error, %{:code => 400, :body => ""}}
-          "" ->
-            Logger.info("Empty created_at")
-            {:error, %{:code => 400, :body => ""}}
-          date ->
-            case DateFormat.parse(date, "{ISO}") do
-              {:ok, _} -> json
-              {_, _} ->
-                Logger.error("Invalid date format")
-                {:error, %{:code => 400, :body => ""}}
-            end
+    case json["created_at"] do
+      nil ->
+        Logger.error("Missing created_at!")
+        error_response(400, "")
+      "" ->
+        Logger.error("Empty created_at!")
+        error_response(400, "")
+      date ->
+        case DateFormat.parse(date, "{ISO}") do
+          {:ok, _} -> :ok
+          _ ->
+            Logger.error("Invalid date format!")
+            error_response(400, "")
         end
     end
   end
 
   defp validate_id(json) do
-    case json do
-      {:error, _} ->
-        json
-      {:ok, json_data} ->
-        case json_data["id"] do
-          nil ->
-            Logger.error("Missing id")
-            {:error, %{:code => 400, :body => ""}}
-          "" ->
-            Logger.error("Empty id")
-            {:error, %{:code => 400, :body => ""}}
-          _ -> json
-        end
+    case json["id"] do
+      nil ->
+        Logger.error("Missing id!")
+        error_response(400, "")
+      "" ->
+        Logger.error("Empty id")
+        error_response(400, "")
+      _ ->
+        :ok
     end
   end
 
-  defp respond(response, conn) do
-    case response do
-      {:ok, _} -> send_resp(conn, 200, "")
-      {:error, resp} -> send_resp(conn, resp[:code], resp[:body])
+  def send_sqs_message(json) do
+    case JSON.encode(json) do
+      {:ok, encoded} ->
+        res = try do
+          :erlcloud_sqs.send_message(["botw_scratch"], [encoded])
+        rescue
+          e in ErlangError ->
+            Logger.error(inspect(e))
+            error_response(500, "")
+        end
+        case res do
+          {:error, _} -> res
+          _ -> :ok
+        end
+      _ ->
+        Logger.error("Error encoding body")
+        error_response(500, "")
     end
   end
+
+  defp error_response(code, body) do
+    {:error, %{code: code, body: body}}
+  end
 end
-# TODO: push to sqs
-# TODO: make code functional and nice
-# TODO: deployment
