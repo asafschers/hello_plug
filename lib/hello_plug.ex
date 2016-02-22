@@ -8,16 +8,16 @@ defmodule HelloPlug do
   plug :dispatch
 
   post "/bang" do
-    validated = with :ok <- validate_headers(conn),
-                     {:ok, body} <- extract_body(conn),
-                     {:ok, json} <- extract_json(body),
-                     :ok <- validate_created_at(json),
-                     :ok <- validate_id(json),
-                     :ok <- send_sqs_message(json)
-                do
-                  :ok
-                end
-    case validated do
+    result = with :ok <- validate_headers(conn),
+                  {:ok, body} <- extract_body(conn),
+                  {:ok, json} <- extract_json(body),
+                  :ok <- validate_created_at(json),
+                  :ok <- validate_id(json),
+                  :ok <- send_sqs_message(json)
+             do
+               :ok
+             end
+    case result do
       :ok -> send_resp(conn, 200, "")
       {:error, response} -> send_resp(conn, response.code, response.body)
       _ -> send_resp(conn, 500, "")
